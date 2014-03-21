@@ -1,0 +1,25 @@
+{
+  "name": "eotic",
+  "version": "1.0.0",
+  "description": "a tiny javascript template engine without any dependence",
+  "main": "eotic.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "template",
+    "jst"
+  ],
+  "author": "gnosaij",
+  "license": "MIT",
+  "dependencies": {
+    "grunt-cli": "latest",
+    "grunt-contrib-concat": "latest",
+    "grunt-contrib-uglify": "latest",
+    "grunt-contrib-watch": "latest",
+    "expect.js": "*",
+    "mocha": "*"
+  },
+  "readmeFilename": "README.md"
+}
