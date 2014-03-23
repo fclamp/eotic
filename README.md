@@ -4,53 +4,136 @@ a tiny javascript template engine without any dependence.
 
 ## features
 
-* 超简洁的语法
-* 没有使用with，屏蔽公认的性能问题
-* 完善的报错信息，方便快速定位错误
-* TODO: 插件机制
-* 遍历数组时，内置支持索引功能。
-* 支持`else if`语意块
+1. 比mustache更简洁干净的语法。
+1. 没有使用with，屏蔽公认的性能问题。
+1. 完善的报错信息，便于快速定位错误。
+1. 遍历数组时，内置支持索引功能。
+1. 内置支持else if语意块。
+1. TODO: 支持”管道”filter。
+1. TODO: 支持子模板。
+1. 配套的预编译工具。
 
 
 ## usage
 
-文档稍后补全，可以先看[测试用例](http://)里的case，包含了所有的语法。
+### string variable: `{{this.varible}}`
 
-## compare
+output the value of the `key` in context data. 
 
-### 相对underscore.template的优点
+    var data = {
+        "name": "eotic"
+    };
+    var tpl = "{{this.name}}";
+    tpl(data); // "eotic"
 
-1) 超简洁的语法
+if there is no such `key` in context data 
 
-2) 没有使用with，屏蔽公认的性能问题
+    var data = {
+        "name": "eotic"
+    };
+    var tpl = "{{this.age}}";
+    tpl(data); // ""
 
-3) 对源模板字符串只执行了一次全局正则匹配，underscore.template是三次
+> 因为没有使用with块，所以这里不会像underscore.template那样报错。
 
-4) 完善的报错信息，方便快速定位错误
 
-5) TODO：支持'管道'filter
+### html-escaped variable: `{{@this.varible}}`
 
-### 相对underscore.template的缺点
+output the html-escaped value of the `key` in context data. 
 
-1) 出于上面第2条的性能考虑，需要在表达式中多写'this.'。以输出`name`值为例，underscore的模板为`<%=name%>`，eotic的模板为`{{this.name}}`。
+    var data = {
+        "name": "<h1> eotic </h1>"
+    };
+    var tpl = "{{@this.name}}";
+    tpl(data); // "&lt;h1&gt; eotic &lt;/h1&gt;"
 
-### 相对mustache系([mustachejs][mustachejs]，[hoganjs][hoganjs]等)模板引擎的优点
+### `if` block: {{#this.varible[ operator somevalue]}}
 
-[mustachejs]:https://github.com/janl/mustache.js
-[hoganjs]:http://twitter.github.io/hogan.js/
 
-1) 更加简化的语法。
 
-2) 遍历数组时，内置支持索引功能。
+|block|equal to|
+|----|----|
+|{{#this.foo}}|if (this.foo)|
+|{{#this.foo === true}}|if (this.foo === true)|
+|{{#this.foo != true}}|if (!this.foo)|
+|{{#this.foo !== true}}|if (this.foo !== true)|
 
-mustache系(Handlebars可以使用`{{@index}}`)模板还需要自己写hack函数或者需要提前把数组转成对象。这一点对所有初次使用mustache系模板的用户的确照成不小的困扰，stackoverflow上关于"如何输出数组索引"的提问和讨论有很多，有力的说明了这个问题。如：
+下面的例子使用`==`操作符做比较。
 
-* [Index of an array element in Mustache.js](http://stackoverflow.com/questions/8567413/index-of-an-array-element-in-mustache-js)
-* [In Mustache, How to get the index of the current Section](http://stackoverflow.com/questions/5021495/in-mustache-how-to-get-the-index-of-the-current-section)
+    var data = {
+        "show": 1
+    };
+    var tpl = "{{#this.show}}show{{/}}";
+    tpl(data); // "show"
+    
+### `else if` block: {{^this.varible operator somevalue}}
 
-3) 直观地支持`else if`语意，mustache系模板需要在`else`块里再嵌套`if`块来间接实现，用起来不爽。
+|block|equal to|
+|----|----|
+|{{^this.foo === true}}|else if (this.foo === true)|
+|{{^this.foo != true}}|else if (this.foo != true)|
+|{{^this.foo !== true}}|else if (this.foo !== true)|
 
-### updates
+    var data = {
+        "number": 2
+    };
+    var tpl = "{{#this.number === 1}}"+
+        "number is 1"+
+    "{{^this.show === 2}}"+
+        "number is 2"+
+    "{{/}}";
+    tpl(data); // "number is 2"
+
+### `else` block: {{^}}
+
+    var data = {
+        "show": false
+    };
+    var tpl = "{{#this.show}}"+
+        "show"+
+    "{{^}}"+
+        "hide"
+    "{{/}}";
+    tpl(data); // "hide"
+
+
+### enumeration block: `{{#this.varible item}}`
+
+array data
+
+    var data = {
+        name: "eotic",
+        features: [
+            "simple",
+            "standalone"
+        ]
+    };
+    var tpl = "<ul>"+
+        "{{#this.features item key}}"+
+            "<li>{{key}}. {{this.name}} is {{item}}</li>"+
+        "{{/}}"+
+    "</ul>";
+    tpl(data); 
+    // "<ul><li>0. eotic is simple</li><li>1. eotic is standalone</li></ul>"
+
+object data
+
+    var data = {
+        features: {
+            "grammer": "simple",
+            "dependency": "standalone"
+        }
+    };
+    var tpl = "<ul>"+
+        "{{#this.features item key}}"+
+            "<li>{{key}}:{{item}}</li>"+
+        "{{/}}"+
+    "</ul>";
+    tpl(data); // "<ul><li>grammer:simple</li><li>dependency:standalone</li></ul>"
+
+
+
+## updates
 
 * 2014-03-21
   - initial version 1.0.0

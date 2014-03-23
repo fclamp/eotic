@@ -9,7 +9,12 @@ describe('eotic template engine', function () {
         expect(et('{{this.name}}')({name:'eotic'})).to.be('eotic');
     });
 
-    it('{{}} + html', function(){
+    it('{{}},no key', function(){
+        // console.log(et('{{this.age}}').source);
+        expect(et('{{this.age}}')({name:'eotic'})).to.be('');
+    });
+
+    it('{{}},html', function(){
         expect(et('{{this.name}}')({name:'<h1>eotic</h1>'})).to.be('<h1>eotic</h1>');
     });
 
@@ -51,14 +56,26 @@ describe('eotic template engine', function () {
         var result = '<ul><li>0:NO "with"</li><li>1:precompiler</li></ul>';
         // console.log(et(tpl).source);
         expect(et(tpl)(data)).to.be(result);
+    });
 
-// var tpl = '<h1><%=this.module%></h1>'+
-// '<ul>'+
-//   '<% var list=this.features; for (var i=0, l=list.length; i<l; i++) { %>'+
-//       '<li><%=list[i]%></li>'+
-//   '<% } %>'+
-// '</ul>';
+    it('this.variable in block', function(){
+        var data = {
+            name: 'eotic',
+            features: [
+                'simple',
+                'standalone'
+            ]
+        };
 
+        var tpl = '<ul>'+
+            '{{#this.features item}}'+
+              '<li>{{this.name}} is {{item}}</li>'+
+            '{{/}}'+
+        '</ul>';
+
+        var result = '<ul><li>eotic is simple</li><li>eotic is standalone</li></ul>';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
     });
 
     it('object', function(){
@@ -86,6 +103,64 @@ describe('eotic template engine', function () {
         };
         var tpl = '{{#this.foo}}foo{{/}}';
         var result = 'foo';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if 1==true', function(){
+        var data = {
+            foo: 1
+        };
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = 'foo';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if "foo"==true', function(){
+        var data = {
+            foo: 'foo'
+        };
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = 'foo';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if ""==true', function(){
+        var data = {
+            foo: ''
+        };
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = '';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if null==true', function(){
+        var data = {
+            foo: null
+        };
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = '';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if undefined==true', function(){
+        var data = {
+            foo: undefined
+        };
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = '';
+        // console.log(et(tpl).source);
+        expect(et(tpl)(data)).to.be(result);
+    });
+
+    it('if undefined==true', function(){
+        var data = {};
+        var tpl = '{{#this.foo}}foo{{/}}';
+        var result = '';
         // console.log(et(tpl).source);
         expect(et(tpl)(data)).to.be(result);
     });
@@ -160,4 +235,6 @@ describe('eotic template engine', function () {
         expect(et(tpl)(data)).to.be(result);
     });
 
+
 });
+
