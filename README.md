@@ -5,7 +5,7 @@ a tiny javascript template engine without any dependence.
 ## features
 
 1. Cleaner grammer than `mustache`.
-1. Without `with` statement in compiled function, so recognized performance problems will be shielded.
+1. Without `with` statement in compiled function, recognized performance problems will be shielded.
 1. More detailed error logging.
 1. Build-in `index` support when iterating an array.
 2. Build-in `else if` support.
