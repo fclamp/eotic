@@ -4,14 +4,14 @@ a tiny javascript template engine without any dependence.
 
 ## features
 
-2. cleaner grammer than `mustache`.
-1. 没有使用with，屏蔽公认的性能问题。
-1. 完善的报错信息，便于快速定位错误。
-1. 遍历数组时，内置支持索引功能。
-1. 内置支持else if语意块。
-1. TODO: 支持”管道”filter。
-1. TODO: 支持子模板。
-1. TODO: 配套的预编译工具。
+1. Cleaner grammer than `mustache`.
+1. Without `with` statement in compiled function, so recognized performance problems will be shielded.
+1. More detailed error logging.
+1. Build-in `index` support when iterating an array.
+2. Build-in `else if` support.
+1. TODO: Customizable output filter plugin.
+1. TODO: More useful partial template than `mustache`.
+1. TODO: Matching precompiled npm tool.
 
 
 ## usage
@@ -31,8 +31,7 @@ if there is no such `key` in context data.
     var tpl = eotic.compile("{{this.name}}");
     tpl.render({}); // ""
 
-> 变量表达式使用了`this.`开头，因为没有使用with块，所以这里不会像underscore.template那样报错。
-
+> Beginning with `this.` prefix, it will not throw errors like `underscore`.
 
 ### html-escaped variable: `{{@this.varible}}`
 
