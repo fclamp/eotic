@@ -4,14 +4,14 @@ a tiny javascript template engine without any dependence.
 
 ## features
 
-1. 比mustache更简洁干净的语法。
+2. cleaner grammer than `mustache`.
 1. 没有使用with，屏蔽公认的性能问题。
 1. 完善的报错信息，便于快速定位错误。
 1. 遍历数组时，内置支持索引功能。
 1. 内置支持else if语意块。
 1. TODO: 支持”管道”filter。
 1. TODO: 支持子模板。
-1. 配套的预编译工具。
+1. TODO: 配套的预编译工具。
 
 
 ## usage
@@ -23,18 +23,15 @@ output the value of the `key` in context data.
     var data = {
         "name": "eotic"
     };
-    var tpl = "{{this.name}}";
-    tpl(data); // "eotic"
+    var tpl = eotic.compile("{{this.name}}");
+    tpl.render(data); // "eotic"
 
-if there is no such `key` in context data 
+if there is no such `key` in context data.
 
-    var data = {
-        "name": "eotic"
-    };
-    var tpl = "{{this.age}}";
-    tpl(data); // ""
+    var tpl = eotic.compile("{{this.name}}");
+    tpl.render({}); // ""
 
-> 因为没有使用with块，所以这里不会像underscore.template那样报错。
+> 变量表达式使用了`this.`开头，因为没有使用with块，所以这里不会像underscore.template那样报错。
 
 
 ### html-escaped variable: `{{@this.varible}}`
@@ -44,57 +41,65 @@ output the html-escaped value of the `key` in context data.
     var data = {
         "name": "<h1> eotic </h1>"
     };
-    var tpl = "{{@this.name}}";
-    tpl(data); // "&lt;h1&gt; eotic &lt;/h1&gt;"
+    var tpl = eotic.compile("{{@this.name}}");
+    tpl.render(data); // "&lt;h1&gt; eotic &lt;/h1&gt;"
 
-### `if` block: {{#this.varible[ operator somevalue]}}
+### `if` block: {{#somevalue[ operator somevalue]}}
 
-
-
-|block|equal to|
-|----|----|
-|{{#this.foo}}|if (this.foo)|
-|{{#this.foo === true}}|if (this.foo === true)|
-|{{#this.foo != true}}|if (!this.foo)|
-|{{#this.foo !== true}}|if (this.foo !== true)|
-
-下面的例子使用`==`操作符做比较。
+demo data
 
     var data = {
-        "show": 1
+        a: true,
+        b: 1,
+        c: 0
     };
-    var tpl = "{{#this.show}}show{{/}}";
-    tpl(data); // "show"
+
+表达式和值的对应demo
+
+|block|equal to|result|note|
+|----|----|----|----|
+|{{#this.a}}|if (this.a)|true|variable vs somevalue|
+|{{#this.b}}|if (this.b)|true|variable vs somevalue|
+|{{#this.b === true}}|if (this.b === true)|false|variable vs somevalue|
+|{{#this.b != true}}|if (this.b != true)|false|variable vs somevalue|
+|{{#this.b !== true}}|if (this.b !== true)|true|variable vs somevalue|
+|{{#this.a == this.b}}|if (this.a == this.b)|true|variable vs variable|
+
     
 ### `else if` block: {{^this.varible operator somevalue}}
 
-|block|equal to|
-|----|----|
-|{{^this.foo === true}}|else if (this.foo === true)|
-|{{^this.foo != true}}|else if (this.foo != true)|
-|{{^this.foo !== true}}|else if (this.foo !== true)|
+|block|equal to|result|note|
+|----|----|----|----|
+|{{^this.a}}|else if (this.a)|true|variable vs somevalue|
+|{{^this.b}}|else if (this.b)|true|variable vs somevalue|
+|{{^this.b === true}}|else if (this.b === true)|false|variable vs somevalue|
+|{{^this.b != true}}|else if (this.b != true)|false|variable vs somevalue|
+|{{^this.b !== true}}|else if (this.b !== true)|true|variable vs somevalue|
+|{{^this.a == this.b}}|else if (this.a == this.b)|true|variable vs variable|
+
+demo
 
     var data = {
         "number": 2
     };
-    var tpl = "{{#this.number === 1}}"+
+    var tpl = eotic.compile("{{#this.number === 1}}"+
         "number is 1"+
-    "{{^this.show === 2}}"+
+    "{{^this.number === 2}}"+
         "number is 2"+
-    "{{/}}";
-    tpl(data); // "number is 2"
+    "{{/}})";
+    tpl.render(data); // "number is 2"
 
 ### `else` block: {{^}}
 
     var data = {
         "show": false
     };
-    var tpl = "{{#this.show}}"+
+    var tpl = eotic.compile("{{#this.show}}"+
         "show"+
     "{{^}}"+
         "hide"
-    "{{/}}";
-    tpl(data); // "hide"
+    "{{/}})";
+    tpl.render(data); // "hide"
 
 
 ### enumeration block: `{{#this.varible item}}`
@@ -108,12 +113,12 @@ array data
             "standalone"
         ]
     };
-    var tpl = "<ul>"+
+    var tpl = eotic.compile("<ul>"+
         "{{#this.features item key}}"+
             "<li>{{key}}. {{this.name}} is {{item}}</li>"+
         "{{/}}"+
-    "</ul>";
-    tpl(data); 
+    "</ul>");
+    tpl.render(data); 
     // "<ul><li>0. eotic is simple</li><li>1. eotic is standalone</li></ul>"
 
 object data
@@ -124,14 +129,22 @@ object data
             "dependency": "standalone"
         }
     };
-    var tpl = "<ul>"+
+    var tpl = eotic.compile("<ul>"+
         "{{#this.features item key}}"+
             "<li>{{key}}:{{item}}</li>"+
         "{{/}}"+
-    "</ul>";
-    tpl(data); // "<ul><li>grammer:simple</li><li>dependency:standalone</li></ul>"
+    "</ul>");
+    tpl.render(data); 
+    // "<ul><li>grammer:simple</li><li>dependency:standalone</li></ul>"
 
+### comments block {{!comment text}}
 
+    var tpl = eotic.compile("{{!hello}}eotic");
+    tpl.render(); // "eotic"
+    
+### end of a block {{/}}
+
+you can see it everywhere in the code above.
 
 ## updates
 

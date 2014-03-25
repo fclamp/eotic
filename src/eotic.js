@@ -29,14 +29,12 @@
  *   (4) http://www.yajet.net/yajet/doc/yajet.html
  */
 (function(glob) {
-
 var re = /\{\{(.+?)\}\}/g,
     thisReg = /\bthis\b/g,
     thisAlt = 't__',
     flags = '#^/@!>',
-    // ifReg = /([=<>]=)|&&|\|\|/,
-    eachReg = /^t__\.(\w+)\s(\w+)\s?(\w+)?.*$/,
-    escapeExp = /[&<>"']/g,
+    eachReg = /^t__(.+?)\s(\w+)\s?(\w+)?.*$/, // see unit test
+    escapeReg = /[&<>"']/g,
     escapeMap = {
         '&': '&amp;',
         '<': '&lt;',
@@ -46,7 +44,7 @@ var re = /\{\{(.+?)\}\}/g,
     };
 
 var eotic = {
-    template: tt,
+    compile: compile,
     escape: ee
 };
 
@@ -58,83 +56,86 @@ function rr(match) {
 // escape html chars
 // NOTE: 'escape' is reserved word in javascript
 function ee(string) {
-    return string == null ? '' : ''+string.replace(escapeExp, rr);
+    return string == null ? '' : ''+string.replace(escapeReg, rr);
 }
 
-// create template function
-function tt(html) {
+// @param {string} str  the string to be processed
+// @param {boolean} js  if the 'str' is a js expression
+function add(str, js) {
+    if (!str) return '';
+    var code = '';
+    // console.log('-----',str, js);
+    if (js) {
+        // turn 'this'(point to data) to 't__' globally
+        str = str.replace(thisReg, thisAlt);
+
+        var firstChar = str[0];
+
+        if (flags.indexOf(firstChar) === -1) {
+            code +='r__.push(' + str + ');\n';
+        } else {
+            // @foo => foo
+            str = str.substr(1);
+            switch (firstChar) {
+                case '@':
+                    code +='r__.push(e__(' + str + '));\n';
+                    break;
+                case '#':
+                    // {#t__.list value key} 
+                    // => 'var key, value; 
+                    //    for(key in t__.list){ value = t__.list[key];'
+                    // {#t__.foo === "foo"}  
+                    // => 'if(t__.foo === "foo"){'
+                    if (eachReg.test(str)) {
+                        code += str.replace(eachReg, function (all, list, value, key) {
+                        key = key || 'key';
+                        return 'var '+key+', '+ value +'\n'+
+                            'for('+key+' in t__'+list+'){\n'+
+                                'if(!t__'+list+'.hasOwnProperty('+key+')) return;\n'+
+                                value+' = t__'+list+'['+key+'];\n';
+                        });
+                    } else {
+                        code += 'if('+str+'){\n';
+                    }
+                    break;
+                case '^':
+                    if (!str) {
+                        code += '}else{\n';
+                    } else {
+                        code += '}else if('+str+'){\n';
+                    }
+                    break;
+                case '/':
+                    code += '}\n';
+                    break;
+                case '!':
+                default:
+                    break;
+            }
+        }
+    } else {
+        code += str != '' ? 'r__.push("' + str.replace(/"/g, '\\"') + '");\n' : '';
+    }
+        
+    return code;
+}
+
+
+function compile(html) {
 
     var match = null,
         block = 0, // 是否在代码块{}中 数字表示代码块的层级
         code = 'var r__=[];\n',
         cursor = 0;
 
-    // @param {string} str  the string to be processed
-    // @param {boolean} js  if the 'str' is a js expression
-    var add = function(str, js) {
-        if (!str) return add;
-        // console.log('-----',str, js);
-        if (js) {
-            // turn 'this'(point to data) to 't__' globally
-            str = str.replace(thisReg, thisAlt);
-
-            var firstChar = str[0];
-
-            if (flags.indexOf(firstChar) === -1) {
-                code +='r__.push(' + str + ');\n';
-            } else {
-                // @foo => foo
-                str = str.substr(1);
-                switch (firstChar) {
-                    case '@':
-                        code +='r__.push(e__(' + str + '));\n';
-                        break;
-                    case '#':
-                        // {#t__.list value key} 
-                        // => 'var key, value; 
-                        //    for(key in t__.list){ value = t__.list[key];'
-                        // {#t__.foo === "foo"}  
-                        // => 'if(t__.foo === "foo"){'
-                        if (eachReg.test(str)) {
-                            code += str.replace(eachReg, function (all, list, value, key) {
-                            key = key || 'key';
-                            return 'var '+key+', '+ value +'\n'+
-                                'for('+key+' in t__.'+list+'){\n'+
-                                    'if(!t__.'+list+'.hasOwnProperty('+key+')) return;\n'+
-                                    value+' = t__.'+list+'['+key+'];\n';
-                            });
-                        } else {
-                            code += 'if('+str+'){\n';
-                        }
-                        break;
-                    case '^':
-                        if (!str) {
-                            code += '}else{\n';
-                        } else {
-                            code += '}else if('+str+'){\n';
-                        }
-                        break;
-                    case '/':
-                        code += '}\n'
-                        break;
-                    case '!':
-                    default:
-                        break;
-                }
-            }
-        } else {
-            code += str != '' ? 'r__.push("' + str.replace(/"/g, '\\"') + '");\n' : '';
-        }
-            
-        return add;
-    }
-
     while(match = re.exec(html)) {
-        add(html.slice(cursor, match.index))(match[1], true);
+        // console.log(match);
+        code += add(html.slice(cursor, match.index))
+        code += add(match[1], true);
         cursor = match.index + match[0].length;
     }
 
-    add(html.substr(cursor, html.length - cursor));
+    code += add(html.substr(cursor, html.length - cursor));
 
     code = (code + 'return r__.join("");');//.replace(/[\r\t\n]/g, '');
 
@@ -142,7 +143,7 @@ function tt(html) {
         var result;
         try { 
             result = new Function('var t__=this, e__=eotic.escape;' + code).apply(data);
-        } catch(err) { 
+        } catch(err) {
             console.error(err.message + " from data and tpl below:");
             console.log(data);
             console.log(html);
@@ -173,10 +174,12 @@ function tt(html) {
     //        ┌     // AMD/CMD/browser support
     // footer ┤     ...
     //        └ })(this);
-    render.source = 'function (data) {\nvar t__=data;\n' + code + '\n}';
 
-    return render;
-}
+    return {
+        render: render,
+        source: 'function (data) {\nvar t__=data;\n' + code + '\n}'
+    };
+} // tt
 
 (typeof module != 'undefined' && module.exports) ?
     (module.exports = eotic) :
